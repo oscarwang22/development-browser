@@ -1276,7 +1276,7 @@ tasks:
                 windows1.*-64.*(-shippable)?/.*: ['trunk']
                 default: []
         treeherder-symbol: nt-trainhop(Mbc-beta)
-        tier: 2
+        tier: 3
         loopback-video: true
         test-manifest-loader: null  # don't load tests in the taskgraph
         mozharness:
@@ -1324,7 +1324,7 @@ tasks:
                 windows1.*-64.*(-shippable)?/.*: ['trunk']
                 default: []
         treeherder-symbol: nt-trainhop(Mbc-release)
-        tier: 2
+        tier: 3
         loopback-video: true
         test-manifest-loader: null  # don't load tests in the taskgraph
         mozharness:

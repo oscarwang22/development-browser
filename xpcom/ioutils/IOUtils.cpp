@@ -1025,7 +1025,7 @@ already_AddRefed<Promise> IOUtils::GetWindowsAttributes(GlobalObject& aGlobal,
 /* static */
 already_AddRefed<Promise> IOUtils::SetWindowsAttributes(
     GlobalObject& aGlobal, const nsAString& aPath,
-    const WindowsFileAttributes& aAttrs, bool aRecursive, ErrorResult& aError) {
+    const WindowsFileAttributes& aAttrs, ErrorResult& aError) {
   return WithPromiseAndState(
       aGlobal, aError, [&](Promise* promise, auto& state) {
         nsCOMPtr<nsIFile> file = new nsLocalFile();
@@ -1063,9 +1063,8 @@ already_AddRefed<Promise> IOUtils::SetWindowsAttributes(
 
         DispatchAndResolve<Ok>(
             state->mEventQueue, promise,
-            [file = std::move(file), setAttrs, clearAttrs, aRecursive]() {
-              return SetWindowsAttributesSync(file, setAttrs, clearAttrs,
-                                              aRecursive);
+            [file = std::move(file), setAttrs, clearAttrs]() {
+              return SetWindowsAttributesSync(file, setAttrs, clearAttrs);
             });
       });
 }
@@ -1764,14 +1763,17 @@ Result<Ok, IOUtils::IOError> IOUtils::RemoveSync(nsIFile* aFile,
       return Err(IOError(rv, "Could not remove `%s': file does not exist",
                          aFile->HumanReadablePath().get()));
     }
+    if (rv == NS_ERROR_FILE_DIR_NOT_EMPTY) {
+      return Err(IOError(rv,
+                         "Could not remove `%s': the directory is not empty",
+                         aFile->HumanReadablePath().get()));
+    }
 
 #ifdef XP_WIN
-    // If aRetryReadonly && aRecursive then we will try recursively removing
-    // read-only status and then delete again.
-    if (aRetryReadonly && (rv == NS_ERROR_FILE_ACCESS_DENIED ||
-                           (rv == NS_ERROR_FILE_DIR_NOT_EMPTY && aRecursive))) {
-      if (auto result = SetWindowsAttributesSync(
-              aFile, 0, FILE_ATTRIBUTE_READONLY, aRecursive);
+
+    if (rv == NS_ERROR_FILE_ACCESS_DENIED && aRetryReadonly) {
+      if (auto result =
+              SetWindowsAttributesSync(aFile, 0, FILE_ATTRIBUTE_READONLY);
           result.isErr()) {
         return Err(IOError::WithCause(
             result.unwrapErr(),
@@ -1781,13 +1783,8 @@ Result<Ok, IOUtils::IOError> IOUtils::RemoveSync(nsIFile* aFile,
       return RemoveSync(aFile, aIgnoreAbsent, aRecursive,
                         /* aRetryReadonly = */ false);
     }
-#endif
 
-    if (rv == NS_ERROR_FILE_DIR_NOT_EMPTY) {
-      return Err(IOError(rv,
-                         "Could not remove `%s': the directory is not empty",
-                         aFile->HumanReadablePath().get()));
-    }
+#endif
 
     return Err(
         IOError(rv, "Could not remove `%s'", aFile->HumanReadablePath().get()));
@@ -2200,37 +2197,16 @@ Result<uint32_t, IOUtils::IOError> IOUtils::GetWindowsAttributesSync(
 }
 
 Result<Ok, IOUtils::IOError> IOUtils::SetWindowsAttributesSync(
-    nsIFile* aFile, const uint32_t aSetAttrs, const uint32_t aClearAttrs,
-    bool aRecursive) {
+    nsIFile* aFile, const uint32_t aSetAttrs, const uint32_t aClearAttrs) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   nsCOMPtr<nsILocalFileWin> file = do_QueryInterface(aFile);
   MOZ_ASSERT(file);
 
-  nsresult rv;
-  if (rv = file->SetWindowsFileAttributes(aSetAttrs, aClearAttrs);
+  if (nsresult rv = file->SetWindowsFileAttributes(aSetAttrs, aClearAttrs);
       NS_FAILED(rv)) {
     return Err(IOError(rv, "Could not set Windows file attributes for `%s'",
                        aFile->HumanReadablePath().get()));
-  }
-
-  if (!aRecursive) {
-    return Ok{};
-  }
-
-  auto fileInfo = MOZ_TRY(StatSync(aFile));
-  if (fileInfo.mType != FileType::Directory) {
-    return Ok{};
-  }
-
-  auto entries = MOZ_TRY(GetChildrenSync(aFile, /* ignoreAbsent = */ false));
-  for (const auto& entry : entries) {
-    nsCOMPtr<nsIFile> file = new nsLocalFile();
-    rv = PathUtils::InitFileWithPath(file, entry);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-    MOZ_TRY(SetWindowsAttributesSync(file, aSetAttrs, aClearAttrs, aRecursive));
   }
 
   return Ok{};

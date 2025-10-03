@@ -1984,7 +1984,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
   int32_t initialIndex = stopCount - 1;
   // This is not the real offset what matters is that it is greater than the
   // outermost one.
-  float initialOffset = 2.0f;
+  float initialOffset = 2.0;
   for (int t = 0; t < span;) {
     // Compute the gradient table offset from the current position.
     Float offset = fastSqrt<true>(dotPos) - startRadius;
@@ -2003,8 +2003,8 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     // gradient.
     float intercept = -1;
     int32_t stopIndex = 0;
-    float prevOffset = 0.0f;
-    float nextOffset = 0.0f;
+    float prevOffset = 0.0;
+    float nextOffset = 0.0;
     if (offset.x < 0) {
       // If inside the inner radius of the gradient table, then use the first
       // stop. Set the intercept to advance forward to the start of the gradient
@@ -2049,7 +2049,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       }
     }
     // Ensure that we are advancing by at least one pixel at each iteration.
-    endT = max(ceil(endT), t + 1.0f);
+    endT = max(ceil(endT), t + 1.0);
 
     // Figure out how many pixels belonging to whole chunks are inside the gradient
     // stop pair.
@@ -2059,15 +2059,16 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     auto maxColorF = stopColors[stopIndex + 1].zyxw * 255.0f;
     // Compute the change in color per change in gradient offset.
     auto deltaOffset = nextOffset - prevOffset;
-    Float deltaColorF =
-        deltaOffset == 0.0f
-            ?
-            // Note: If we take this branch, we know that we are going to fill
-            // some pixels with a solid color (we are in or out of the range of
-            // gradient stops). We could leverage that to skip the offset
-            // calculation.
-            Float(0.0f)
-            : (maxColorF - minColorF) / deltaOffset;
+    Float deltaColorF;
+    if (deltaOffset == 0.0) {
+      // Note: If we take this branch, we know that we are going to fill
+      // some pixels with a solid color (we are in or out of the range of
+      // gradient stops). We could leverage that to skip the offset
+      // calculation.
+      deltaColorF = Float(0.0);
+    } else {
+      deltaColorF = (maxColorF - minColorF) / deltaOffset;
+    }
     // Subtract off the color difference of the beginning of the current span
     // from the beginning of the gradient.
     Float colorF =
@@ -2116,7 +2117,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       // dotPosDelta's members are monotonically increasing, so adjusting the step only
       // requires undoing the factor of 4 and multiplying with the actual number of
       // remainder pixels.
-      float partialDeltaDelta2 = deltaDelta2 * 0.25f * float(remainder);
+      float partialDeltaDelta2 = deltaDelta2 * 0.25 * float(remainder);
       dotPosDelta += partialDeltaDelta2;
 
       // For dotPos, however, there is a compounding effect that makes the math trickier.
@@ -2125,15 +2126,19 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
 
       // The deltaDelta2 for a single-pixel step (undoing the 4*4 factor we did earlier
       // when making deltaDelta2 work for 4-pixels chunks).
-      float singlePxDeltaDelta2 = deltaDelta2 * 0.0625f;
+      float singlePxDeltaDelta2 = deltaDelta2 * 0.0625;
       // The first single-pixel delta for dotPos (The difference between dotPos's first
       // two lanes).
       float dotPosDeltaFirst = dotPos.y - dotPos.x;
       // For each 1-pixel step the delta is applied and monotonically increased by
       // singleDeltaDelta2.
-      Float pxOffsets = {0.0f, 1.0f, 2.0f, 3.0f};
-      Float partialDotPosDelta =
-          pxOffsets * singlePxDeltaDelta2 + dotPosDeltaFirst;
+      // TODO: This should be be Float pxOffsets(0.0f, 1.0f, 2.0f, 3.0f); but it does
+      // not compile in some configurations for some reason.
+      Float pxOffsets = Float(0.0f);
+      pxOffsets.y = 1.0;
+      pxOffsets.z = 2.0;
+      pxOffsets.w = 3.0;
+      Float partialDotPosDelta = Float(dotPosDeltaFirst) + Float(singlePxDeltaDelta2) * pxOffsets;
 
       // Apply each single-pixel step.
       for (int i = 0; i < remainder; ++i) {

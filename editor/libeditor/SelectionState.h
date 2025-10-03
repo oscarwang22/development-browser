@@ -322,8 +322,6 @@ class MOZ_STACK_CLASS RangeUpdater final {
   bool mLocked;
 };
 
-enum class StopTracking : bool { No, Yes };
-
 /**
  * Helper class for using SelectionState.  Stack based class for doing
  * preservation of dom points across editor actions.
@@ -371,13 +369,11 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
 
   ~AutoTrackDOMPoint() { FlushAndStopTracking(); }
 
-  void Flush(StopTracking aStopTracking) {
+  void FlushAndStopTracking() {
     if (!mIsTracking) {
       return;
     }
-    if (static_cast<bool>(aStopTracking)) {
-      mIsTracking = false;
-    }
+    mIsTracking = false;
     if (mPoint.isSome()) {
       mRangeUpdater.DropRangeItem(mRangeItem);
       // Setting `mPoint` with invalid DOM point causes hitting `NS_ASSERTION()`
@@ -419,8 +415,6 @@ class MOZ_STACK_CLASS AutoTrackDOMPoint final {
       *mOffset = 0;
     }
   }
-
-  void FlushAndStopTracking() { Flush(StopTracking::Yes); }
 
   void StopTracking() { mIsTracking = false; }
 

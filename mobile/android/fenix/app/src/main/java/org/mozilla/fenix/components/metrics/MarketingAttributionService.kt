@@ -52,7 +52,6 @@ class MarketingAttributionService(private val context: Context) {
                             }
 
                             if (!installReferrerResponse.isNullOrBlank()) {
-                                response = installReferrerResponse
                                 val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
 
                                 context.components.distributionIdManager
@@ -100,7 +99,6 @@ class MarketingAttributionService(private val context: Context) {
      */
     companion object {
         private val marketingPrefixes = listOf(GCLID_PREFIX, ADJUST_REFTAG_PREFIX)
-        var response: String? = null
 
         @VisibleForTesting
         internal fun shouldShowMarketingOnboarding(installReferrerResponse: String?): Boolean {

@@ -37,7 +37,7 @@
   /*** Button sizes w/ adjustments for small windows and uidensity modes. ***/
 
   --toolbarbutton-outer-padding: 2px;
-  --toolbarbutton-inner-padding: 8px;
+  --toolbarbutton-inner-padding: 10px;
   --bookmark-block-padding: 4px;
 
   &:where([uidensity="touch"]) {
@@ -167,21 +167,12 @@ toolbar .toolbarbutton-1 {
   }
 
   &:not([disabled]) {
-    &:hover > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
-      background-color: var(--toolbarbutton-hover-background);
-      color: inherit;
-    }
-
     &:is(:hover:active, [open], [checked]) > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
       background-color: var(--toolbarbutton-active-background);
       color: inherit;
     }
 
     &:not(:focus-visible) {
-      &:hover > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
-        outline-color: var(--toolbarbutton-hover-outline-color);
-      }
-
       &:hover:active > :is(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
         outline-color: var(--toolbarbutton-active-outline-color);
       }

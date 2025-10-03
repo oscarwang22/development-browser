@@ -16,13 +16,15 @@ namespace mozilla {
 nsresult GetSelectedCityInfo(nsAString& aCountryCode) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NSString* countryCode = NSLocale.currentLocale.countryCode;
+  // Can be replaced with [[NSLocale currentLocale] countryCode] once we build
+  // with the 10.12 SDK.
+  id countryCode = [[NSLocale currentLocale] objectForKey:NSLocaleCountryCode];
 
-  if (!countryCode) {
+  if (![countryCode isKindOfClass:[NSString class]]) {
     return NS_ERROR_FAILURE;
   }
 
-  mozilla::CopyNSStringToXPCOMString(countryCode, aCountryCode);
+  mozilla::CopyNSStringToXPCOMString((NSString*)countryCode, aCountryCode);
 
   return NS_OK;
 

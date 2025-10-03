@@ -59,8 +59,6 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
 
         val optionTrueRadio = optionTrueView.findViewById<RadioButton>(R.id.radio_button)
         val optionFalseRadio = optionFalseView.findViewById<RadioButton>(R.id.radio_button)
-        optionTrueRadio.setStartCheckedIndicator()
-        optionFalseRadio.setStartCheckedIndicator()
 
         val optionTrueTitle = optionTrueView.findViewById<TextView>(R.id.title)
         val optionFalseTitle = optionFalseView.findViewById<TextView>(R.id.title)

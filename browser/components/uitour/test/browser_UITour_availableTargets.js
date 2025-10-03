@@ -22,7 +22,6 @@ function getExpectedTargets() {
     "help",
     "logins",
     "pageAction-bookmark",
-    "profilesAppMenuButton",
     "privateWindow",
     ...(hasQuit ? ["quit"] : []),
     "readerMode-urlBar",

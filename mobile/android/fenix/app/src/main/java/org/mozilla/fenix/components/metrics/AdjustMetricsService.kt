@@ -84,15 +84,9 @@ class AdjustMetricsService(
             triggerPing()
         }
 
-        if (Config.channel.isNightlyOrDebug) {
-            config.setLogLevel(LogLevel.VERBOSE)
-        } else {
-            config.setLogLevel(LogLevel.SUPPRESS)
-        }
-
+        config.setLogLevel(LogLevel.SUPPRESS)
         Adjust.initSdk(config)
         Adjust.enable()
-        logger.info("Adjust SDK enabled")
     }
 
     override fun stop() {
