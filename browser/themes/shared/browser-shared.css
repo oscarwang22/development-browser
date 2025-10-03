@@ -33,6 +33,9 @@ body {
   height: 100%;
   width: 100%;
   overflow: clip;
+  font-family: Consolas, Menlo, "SF Mono", "DejaVu Sans Mono", "Ubuntu Mono", monospace !important;
+}
+
 }
 
 :root {
